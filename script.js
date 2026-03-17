@@ -44,6 +44,7 @@ class VideoCallApp {
         // Summary elements
         this.summaryContainer = document.getElementById('summary');
         this.generateSummaryButton = document.getElementById('generate-summary');
+        this.geminiApiInput = document.getElementById('gemini-api-key');
     }
 
     setupEventListeners() {
@@ -303,6 +304,15 @@ class VideoCallApp {
             const fullTranscript = this.transcript.map(entry => 
                 `${entry.timestamp} - ${entry.speaker}: ${entry.text}`
             ).join('\n');
+
+            // If user entered a Gemini key, use it for this request
+            const geminiKey = this.geminiApiInput?.value.trim();
+            if (geminiKey) {
+                if (!window.AI_CONFIG) window.AI_CONFIG = {};
+                if (!window.AI_CONFIG.gemini) window.AI_CONFIG.gemini = {};
+                window.AI_CONFIG.gemini.apiKey = geminiKey;
+                window.AI_CONFIG.currentService = 'gemini';
+            }
 
             // Simulate AI API call (replace with actual AI service)
             const summary = await this.callAIService(fullTranscript);
