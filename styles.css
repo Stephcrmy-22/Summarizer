@@ -1,0 +1,138 @@
+/* Custom styles for video call application */
+
+.video-container {
+    position: relative;
+    background: #1f2937;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.video-element {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.control-button {
+    transition: all 0.2s ease-in-out;
+}
+
+.control-button:hover {
+    transform: translateY(-1px);
+}
+
+.control-button.muted {
+    background: #dc2626 !important;
+}
+
+.transcription-text {
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.transcription-speaker {
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+.summary-section {
+    border-left: 3px solid #8b5cf6;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+.summary-point {
+    margin-bottom: 0.5rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.summary-point:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #8b5cf6;
+    font-weight: bold;
+}
+
+.loading-spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.connection-status {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.connection-status.connected {
+    background: rgba(34, 197, 94, 0.7);
+}
+
+.connection-status.connecting {
+    background: rgba(251, 146, 60, 0.7);
+}
+
+.connection-status.disconnected {
+    background: rgba(239, 68, 68, 0.7);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .lg\\:grid-cols-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .lg\\:col-span-2 {
+        grid-column: span 1;
+    }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #374151;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #6b7280;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}

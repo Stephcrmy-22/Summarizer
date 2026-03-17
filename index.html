@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Call with AI Meeting Minutes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto p-4">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">Video Call with AI Meeting Minutes</h1>
+            <p class="text-gray-400">One-to-one video calling with real-time transcription and AI summarization</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Video Section -->
+            <section class="lg:col-span-2">
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <!-- Video Grid -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="relative">
+                            <div id="local-video" class="w-full aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
+                                <span class="text-gray-400">Local Video</span>
+                            </div>
+                            <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-sm">
+                                You
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <div id="remote-video" class="w-full aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
+                                <span class="text-gray-400">Remote Video</span>
+                            </div>
+                            <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded text-sm">
+                                Remote User
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex justify-center space-x-4 mb-4">
+                        <button id="mute-audio" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                            </svg>
+                            <span>Mute Audio</span>
+                        </button>
+                        <button id="mute-video" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>Mute Video</span>
+                        </button>
+                        <button id="leave-call" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            <span>Leave Call</span>
+                        </button>
+                    </div>
+
+                    <!-- Connection Form -->
+                    <div id="connection-form" class="bg-gray-700 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold mb-4">Join Call</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Channel Name</label>
+                                <input type="text" id="channel" class="w-full px-3 py-2 bg-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter channel name" value="meeting-room">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Your User ID</label>
+                                <input type="text" id="uid" class="w-full px-3 py-2 bg-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter user ID" value="user1">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Agora App ID</label>
+                                <input type="text" id="appid" class="w-full px-3 py-2 bg-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter Agora App ID">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Token (optional)</label>
+                                <input type="text" id="token" class="w-full px-3 py-2 bg-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter token if required">
+                            </div>
+                            <button id="join-call" class="w-full bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
+                                Join Call
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transcription & Summary Section -->
+            <section class="space-y-6">
+                <!-- Live Transcription -->
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center justify-between">
+                        Live Transcription
+                        <button id="toggle-transcription" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm transition">
+                            Start
+                        </button>
+                    </h3>
+                    <div id="transcription" class="bg-gray-700 rounded-lg p-3 h-64 overflow-y-auto text-sm font-mono">
+                        <div class="text-gray-400">Transcription will appear here...</div>
+                    </div>
+                </div>
+
+                <!-- Meeting Summary -->
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center justify-between">
+                        AI Meeting Summary
+                        <button id="generate-summary" class="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm transition">
+                            Generate
+                        </button>
+                    </h3>
+                    <div id="summary" class="bg-gray-700 rounded-lg p-3 h-64 overflow-y-auto text-sm">
+                        <div class="text-gray-400">Meeting summary will appear here...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
