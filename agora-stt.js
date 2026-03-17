@@ -1,7 +1,7 @@
 class AgoraSTT {
     constructor({appId, projectId, token, transcriptionCallback}) {
         this.appId = appId;
-        this.projectId = projectId;
+        this.projectId = projectId || appId; // fallback to App ID if Project ID is unavailable
         this.token = token;
         this.transcriptionCallback = transcriptionCallback || (() => {});
         this.socket = null;
