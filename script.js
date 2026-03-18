@@ -400,8 +400,9 @@ class VideoCallApp {
 
             if (typeof window !== 'undefined' && window.AI_PROMPTS && window.AI_PROMPTS.meetingSummary) {
                 prompt = window.AI_PROMPTS.meetingSummary;
-            } else if (typeof AI_PROMPTS !== 'undefined' && AI_PROMPTS && AI_PROMPTS.meetingSummary) {
-                prompt = AI_PROMPTS.meetingSummary;
+            } else if (typeof window !== 'undefined' && window.AI_PROMPTS && window.AI_PROMPTS.meetingSummary) {
+                // Fallback same condition for safety; avoid global direct lookup.
+                prompt = window.AI_PROMPTS.meetingSummary;
             } else {
                 prompt = `You are an assistant. Summarize the text below into key points, action items, and next steps.`;
                 console.warn('AI_PROMPTS not found, using fallback prompt.');
