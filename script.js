@@ -9,6 +9,7 @@ class VideoCallApp {
         };
         this.remoteUsers = {};
         this.isTranscribing = false;
+        this.autoTranscriptionRestart = false;
         this.transcript = [];
         this.recognition = null;
         this.isAudioMuted = false;
@@ -92,20 +93,37 @@ class VideoCallApp {
 
             this.recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
+
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    this.isTranscribing = false;
+                    this.autoTranscriptionRestart = false;
+                    if (this.toggleTranscriptionButton) {
+                        this.toggleTranscriptionButton.textContent = 'Start';
+                        this.toggleTranscriptionButton.classList.remove('bg-red-600');
+                        this.toggleTranscriptionButton.classList.add('bg-blue-600');
+                    }
+                    alert('Microphone access denied. Please allow microphone and reload.');
+                    return;
+                }
+
                 if (event.error === 'no-speech') {
-                    this.recognition.stop();
-                    setTimeout(() => {
-                        if (this.isTranscribing) {
-                            this.recognition.start();
-                        }
-                    }, 1000);
+                    if (this.autoTranscriptionRestart) {
+                        setTimeout(() => {
+                            if (this.isTranscribing) {
+                                this.recognition.start();
+                            }
+                        }, 1000);
+                    }
+                    return;
                 }
             };
 
             this.recognition.onend = () => {
-                if (this.isTranscribing) {
+                if (this.autoTranscriptionRestart && this.isTranscribing) {
                     setTimeout(() => {
-                        this.recognition.start();
+                        if (this.isTranscribing) {
+                            this.recognition.start();
+                        }
                     }, 1000);
                 }
             };
@@ -248,12 +266,14 @@ class VideoCallApp {
         if (!this.recognition) return;
 
         if (this.isTranscribing) {
+            this.autoTranscriptionRestart = false;
             this.recognition.stop();
             this.isTranscribing = false;
             this.toggleTranscriptionButton.textContent = 'Start';
             this.toggleTranscriptionButton.classList.remove('bg-red-600');
             this.toggleTranscriptionButton.classList.add('bg-blue-600');
         } else {
+            this.autoTranscriptionRestart = true;
             this.recognition.start();
             this.isTranscribing = true;
             this.toggleTranscriptionButton.textContent = 'Stop';
@@ -312,7 +332,13 @@ class VideoCallApp {
                 window.AI_CONFIG.currentService = 'gemini';
             }
 
-            // Simulate AI API call (replace with actual AI service)
+            // guard invalid API keys
+            const service = window.AI_CONFIG?.currentService || 'mock';
+            if (service === 'gemini' && (!window.AI_CONFIG.gemini?.apiKey || window.AI_CONFIG.gemini.apiKey.includes('YOUR_'))) {
+                console.warn('Gemini key missing/placeholder, using mock service');
+                window.AI_CONFIG.currentService = 'mock';
+            }
+
             const summary = await this.callAIService(fullTranscript);
             
             this.displaySummary(summary);
