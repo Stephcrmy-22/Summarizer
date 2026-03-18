@@ -27,25 +27,15 @@ A one-to-one video calling web application with real-time speech-to-text transcr
 4. Set a channel name and user ID
 5. Click "Join Call" to start
 
-### 3. Run Locally with Agora STT Proxy (recommended)
+### 3. Run Locally
 
-1. Install Node dependencies:
-   - `npm init -y`
-   - `npm install express socket.io ws node-fetch cors`
-
-2. Start local server:
-   - `node server.js`
-
-3. Open browser at `http://localhost:3000` (not file://)
-
-4. Enter:
+1. Open `index.html` in a supported browser (Chrome/Edge recommended).
+2. If needed, serve from local HTTP server (`python -m http.server`, `live-server`, or similar).
+3. Enter
    - `Agora App ID`
    - `Channel Name`, `User ID`, optional token
-   - `Agora STT App ID`, optional `Agora STT Project ID` (appId fallback is enabled), `Agora STT Token`
-
-5. Click `Join Call`, then `Start Agora STT`.
-
-This proxy route avoids CORS issues by letting your local Node server call Agora STT directly.
+4. Click `Join Call`.
+5. In Live Transcription panel, click `Start` to use browser Web Speech API.
 
 ### 4. AI Service Integration
 

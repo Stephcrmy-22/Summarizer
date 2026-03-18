@@ -39,10 +39,7 @@ class VideoCallApp {
 
         // Transcription elements
         this.transcriptionContainer = document.getElementById('transcription');
-        this.startAgoraSttButton = document.getElementById('start-agora-stt');
-        this.agoraSttAppIdInput = document.getElementById('agora-stt-appid');
-        this.agoraSttProjectIdInput = document.getElementById('agora-stt-projectid');
-        this.agoraSttTokenInput = document.getElementById('agora-stt-token');
+        this.toggleTranscriptionButton = document.getElementById('toggle-transcription');
 
         // Summary elements
         this.summaryContainer = document.getElementById('summary');
@@ -55,7 +52,7 @@ class VideoCallApp {
         this.leaveButton.addEventListener('click', () => this.leaveCall());
         this.muteAudioButton.addEventListener('click', () => this.toggleAudio());
         this.muteVideoButton.addEventListener('click', () => this.toggleVideo());
-        this.startAgoraSttButton.addEventListener('click', () => this.startAgoraSTT());
+        this.toggleTranscriptionButton.addEventListener('click', () => this.toggleTranscription());
         this.generateSummaryButton.addEventListener('click', () => this.generateSummary());
     }
 
@@ -151,11 +148,6 @@ class VideoCallApp {
             // Publish local tracks
             await this.client.publish([this.localTracks.audioTrack, this.localTracks.videoTrack]);
 
-            // If Agora STT is started, attach local audio track
-            if (this.agoraSTT && this.localTracks.audioTrack) {
-                this.attachTrackToSTT(this.localTracks.audioTrack, 'local');
-            }
-
             // Update UI
             this.connectionForm.style.display = 'none';
             this.addConnectionStatus('connected');
@@ -178,9 +170,6 @@ class VideoCallApp {
             if (mediaType === 'audio') {
                 const remoteAudioTrack = user.audioTrack;
                 remoteAudioTrack.play();
-                if (this.agoraSTT) {
-                    this.attachTrackToSTT(remoteAudioTrack, user.uid);
-                }
             }
 
             this.remoteUsers[user.uid] = user;
@@ -191,70 +180,9 @@ class VideoCallApp {
         });
 
         this.client.on('user-left', (user) => {
-            if (this.agoraSTT) {
-                this.agoraSTT.removeParticipant(user.uid);
-            }
             delete this.remoteUsers[user.uid];
             this.remoteVideoContainer.innerHTML = '<span class="text-gray-400">Remote Video</span>';
         });
-    }
-
-    async startAgoraSTT() {
-        const sttAppId = this.agoraSttAppIdInput.value.trim();
-        const sttProjectId = this.agoraSttProjectIdInput.value.trim();
-        const sttToken = this.agoraSttTokenInput.value.trim();
-
-        if (!sttAppId || !sttProjectId || !sttToken) {
-            alert('Please provide Agora STT App ID, Project ID, and Token');
-            return;
-        }
-
-        if (!window.AgoraSTT) {
-            alert('Agora STT module not loaded. Make sure agora-stt.js is included');
-            return;
-        }
-
-        this.agoraSTT = new AgoraSTT({
-            appId: sttAppId,
-            projectId: sttProjectId,
-            token: sttToken,
-            transcriptionCallback: (text, userId) => {
-                this.addTranscript(`${userId}: ${text}`, 'Remote');
-            }
-        });
-
-        try {
-            await this.agoraSTT.init();
-            this.addTranscript('Agora STT initialized and listening', 'System');
-
-            // attach local track if already available
-            if (this.localTracks.audioTrack) {
-                this.attachTrackToSTT(this.localTracks.audioTrack, 'local');
-            }
-
-            Object.values(this.remoteUsers).forEach(user => {
-                if (user.audioTrack) {
-                    this.attachTrackToSTT(user.audioTrack, user.uid);
-                }
-            });
-        } catch (error) {
-            console.error('Agora STT init failed:', error);
-            alert('Failed to initialize Agora STT: '+error.message);
-        }
-    }
-
-    attachTrackToSTT(agoraAudioTrack, participantId) {
-        try {
-            const mediaTrack = agoraAudioTrack.getMediaStreamTrack ? agoraAudioTrack.getMediaStreamTrack() : null;
-            if (!mediaTrack) {
-                console.warn('Cannot get media track from Agora audio track');
-                return;
-            }
-            const mediaStream = new MediaStream([mediaTrack]);
-            this.agoraSTT.addStream(mediaStream, participantId);
-        } catch (err) {
-            console.error('Error attaching track to STT:', err);
-        }
     }
 
     async leaveCall() {
