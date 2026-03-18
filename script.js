@@ -396,11 +396,17 @@ class VideoCallApp {
 
         try {
             let response;
-            const prompt = window.AI_PROMPTS?.meetingSummary || (typeof AI_PROMPTS !== 'undefined' ? AI_PROMPTS.meetingSummary : undefined);
-        if (!prompt) {
-            console.warn('AI_PROMPTS not found, using a safe fallback prompt.');
-        }
-            
+            let prompt;
+
+            if (typeof window !== 'undefined' && window.AI_PROMPTS && window.AI_PROMPTS.meetingSummary) {
+                prompt = window.AI_PROMPTS.meetingSummary;
+            } else if (typeof AI_PROMPTS !== 'undefined' && AI_PROMPTS && AI_PROMPTS.meetingSummary) {
+                prompt = AI_PROMPTS.meetingSummary;
+            } else {
+                prompt = `You are an assistant. Summarize the text below into key points, action items, and next steps.`;
+                console.warn('AI_PROMPTS not found, using fallback prompt.');
+            }
+
             switch (service) {
                 case 'openai':
                     response = await this.callOpenAI(transcript, prompt);
