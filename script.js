@@ -46,6 +46,7 @@ class VideoCallApp {
         // Summary elements
         this.summaryContainer = document.getElementById('summary');
         this.generateSummaryButton = document.getElementById('generate-summary');
+        this.downloadTranscriptButton = document.getElementById('download-transcript');
         this.geminiApiInput = document.getElementById('gemini-api-key');
     }
 
@@ -56,6 +57,9 @@ class VideoCallApp {
         this.muteVideoButton.addEventListener('click', () => this.toggleVideo());
         this.toggleTranscriptionButton.addEventListener('click', () => this.toggleTranscription());
         this.generateSummaryButton.addEventListener('click', () => this.generateSummary());
+        if (this.downloadTranscriptButton) {
+            this.downloadTranscriptButton.addEventListener('click', () => this.downloadTranscript());
+        }
     }
 
     initializeSpeechRecognition() {
@@ -387,8 +391,42 @@ class VideoCallApp {
     }
 
     async callAIService(transcript) {
-        const service = window.AI_CONFIG?.currentService || 'mock';
-        
+        let service = window.AI_CONFIG?.currentService || 'mock';
+
+        const isPlaceholderKey = (key) => !key || key.includes('YOUR_') || key.trim().length === 0;
+
+        if (service === 'openai') {
+            const openai = window.AI_CONFIG?.openai;
+            if (!openai || isPlaceholderKey(openai.apiKey) || !openai.endpoint) {
+                console.warn('OpenAI config missing or invalid; falling back to mock');
+                service = 'mock';
+            }
+        }
+
+        if (service === 'anthropic') {
+            const anthropic = window.AI_CONFIG?.anthropic;
+            if (!anthropic || isPlaceholderKey(anthropic.apiKey) || !anthropic.endpoint) {
+                console.warn('Anthropic config missing or invalid; falling back to mock');
+                service = 'mock';
+            }
+        }
+
+        if (service === 'gemini') {
+            const gemini = window.AI_CONFIG?.gemini;
+            if (!gemini || isPlaceholderKey(gemini.apiKey) || !gemini.endpoint) {
+                console.warn('Gemini config missing or invalid; falling back to mock');
+                service = 'mock';
+            }
+        }
+
+        if (service === 'custom') {
+            const custom = window.AI_CONFIG?.custom;
+            if (!custom || !custom.endpoint || !custom.apiKey) {
+                console.warn('Custom AI config missing or invalid; falling back to mock');
+                service = 'mock';
+            }
+        }
+
         if (service === 'mock') {
             // Mock implementation for demonstration
             return await this.mockAIService(transcript);
@@ -479,7 +517,17 @@ class VideoCallApp {
     }
 
     async callGemini(transcript, prompt) {
-        const config = window.AI_CONFIG.gemini;
+        const config = window.AI_CONFIG?.gemini;
+        if (!config || !config.endpoint || !config.apiKey || config.apiKey.includes('YOUR_')) {
+            throw new Error('Gemini API key/endpoint not configured.');
+        }
+
+        // Require that this runs on HTTP(S)/localhost, not file://
+        const origin = window.location.origin;
+        if (!origin.startsWith('http')) {
+            throw new Error('Gemini endpoint requires running from HTTP/HTTPS origin (not file://).');
+        }
+
         const response = await fetch(`${config.endpoint}?key=${config.apiKey}`, {
             method: 'POST',
             headers: {
@@ -527,6 +575,25 @@ class VideoCallApp {
         };
         
         return summary;
+    }
+
+    downloadTranscript() {
+        if (!this.transcript || this.transcript.length === 0) {
+            alert('No transcript to download yet.');
+            return;
+        }
+
+        const text = this.transcript.map((entry, i) => `${i + 1}. [${entry.timestamp}] ${entry.speaker}: ${entry.text}`).join('\n');
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transcript.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     extractKeyPoints(transcript) {
