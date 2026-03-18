@@ -10,6 +10,7 @@ class VideoCallApp {
         this.remoteUsers = {};
         this.isTranscribing = false;
         this.autoTranscriptionRestart = false;
+        this.recognitionActive = false;
         this.transcript = [];
         this.recognition = null;
         this.isAudioMuted = false;
@@ -97,6 +98,7 @@ class VideoCallApp {
                 if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                     this.isTranscribing = false;
                     this.autoTranscriptionRestart = false;
+                    this.recognitionActive = false;
                     if (this.toggleTranscriptionButton) {
                         this.toggleTranscriptionButton.textContent = 'Start';
                         this.toggleTranscriptionButton.classList.remove('bg-red-600');
@@ -107,22 +109,44 @@ class VideoCallApp {
                 }
 
                 if (event.error === 'no-speech') {
-                    if (this.autoTranscriptionRestart) {
+                    if (this.autoTranscriptionRestart && this.isTranscribing) {
                         setTimeout(() => {
-                            if (this.isTranscribing) {
-                                this.recognition.start();
+                            if (this.isTranscribing && !this.recognitionActive) {
+                                try {
+                                    this.recognition.start();
+                                    this.recognitionActive = true;
+                                } catch (e) {
+                                    console.warn('Could not restart recognition after no-speech', e);
+                                }
                             }
                         }, 1000);
                     }
                     return;
                 }
+
+                // For other errors, stop auto restart to prevent permission loops
+                this.autoTranscriptionRestart = false;
+                this.recognitionActive = false;
+                this.isTranscribing = false;
+                if (this.toggleTranscriptionButton) {
+                    this.toggleTranscriptionButton.textContent = 'Start';
+                    this.toggleTranscriptionButton.classList.remove('bg-red-600');
+                    this.toggleTranscriptionButton.classList.add('bg-blue-600');
+                }
             };
 
             this.recognition.onend = () => {
+                this.recognitionActive = false;
+
                 if (this.autoTranscriptionRestart && this.isTranscribing) {
                     setTimeout(() => {
-                        if (this.isTranscribing) {
-                            this.recognition.start();
+                        if (this.isTranscribing && !this.recognitionActive) {
+                            try {
+                                this.recognition.start();
+                                this.recognitionActive = true;
+                            } catch (e) {
+                                console.warn('Could not restart recognition on end', e);
+                            }
                         }
                     }, 1000);
                 }
@@ -269,16 +293,26 @@ class VideoCallApp {
             this.autoTranscriptionRestart = false;
             this.recognition.stop();
             this.isTranscribing = false;
+            this.recognitionActive = false;
             this.toggleTranscriptionButton.textContent = 'Start';
             this.toggleTranscriptionButton.classList.remove('bg-red-600');
             this.toggleTranscriptionButton.classList.add('bg-blue-600');
         } else {
-            this.autoTranscriptionRestart = true;
-            this.recognition.start();
-            this.isTranscribing = true;
-            this.toggleTranscriptionButton.textContent = 'Stop';
-            this.toggleTranscriptionButton.classList.remove('bg-blue-600');
-            this.toggleTranscriptionButton.classList.add('bg-red-600');
+            try {
+                this.autoTranscriptionRestart = true;
+                this.recognition.start();
+                this.recognitionActive = true;
+                this.isTranscribing = true;
+                this.toggleTranscriptionButton.textContent = 'Stop';
+                this.toggleTranscriptionButton.classList.remove('bg-blue-600');
+                this.toggleTranscriptionButton.classList.add('bg-red-600');
+            } catch (err) {
+                console.error('Failed to start speech recognition:', err);
+                alert('Unable to start microphone recognition: ' + err.message);
+                this.isTranscribing = false;
+                this.autoTranscriptionRestart = false;
+                this.recognitionActive = false;
+            }
         }
     }
 
@@ -362,7 +396,10 @@ class VideoCallApp {
 
         try {
             let response;
-            const prompt = window.AI_PROMPTS?.meetingSummary || AI_PROMPTS.meetingSummary;
+            const prompt = window.AI_PROMPTS?.meetingSummary || (typeof AI_PROMPTS !== 'undefined' ? AI_PROMPTS.meetingSummary : undefined);
+        if (!prompt) {
+            console.warn('AI_PROMPTS not found, using a safe fallback prompt.');
+        }
             
             switch (service) {
                 case 'openai':
