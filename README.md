@@ -27,7 +27,27 @@ A one-to-one video calling web application with real-time speech-to-text transcr
 4. Set a channel name and user ID
 5. Click "Join Call" to start
 
-### 3. AI Service Integration
+### 3. Run Locally with Agora STT Proxy (recommended)
+
+1. Install Node dependencies:
+   - `npm init -y`
+   - `npm install express socket.io ws node-fetch cors`
+
+2. Start local server:
+   - `node server.js`
+
+3. Open browser at `http://localhost:3000` (not file://)
+
+4. Enter:
+   - `Agora App ID`
+   - `Channel Name`, `User ID`, optional token
+   - `Agora STT App ID`, optional `Agora STT Project ID` (appId fallback is enabled), `Agora STT Token`
+
+5. Click `Join Call`, then `Start Agora STT`.
+
+This proxy route avoids CORS issues by letting your local Node server call Agora STT directly.
+
+### 4. AI Service Integration
 
 The application includes a mock AI service for demonstration. To integrate with a real AI service (like OpenAI, Claude, etc.), modify the `callAIService` function in `script.js`:
 
@@ -45,7 +65,7 @@ async callAIService(transcript) {
             task: 'summarize_meeting'
         })
     });
-    
+
     const summary = await response.json();
     return summary;
 }
